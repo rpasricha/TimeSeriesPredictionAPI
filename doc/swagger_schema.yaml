@@ -1,0 +1,253 @@
+swagger: "2.0"
+basepath: "/v3"
+info:
+  title: "Citadel Prediction API"
+  version: "1"
+tags:
+- name: "models"
+  description: "Operations related to time series prediction models"
+paths:
+  /models:
+    get:
+      tags:
+      - "models"
+      summary: "Get all time series for which models have been trained"
+      produces:
+      - "application/json"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            type: "array"
+            items:
+              $ref: "#/definitions/reducedmodel"
+    post:
+      tags:
+      - "models"
+      summary: "Train a new model"
+      description: "Trains a new prediction model for the specified uuid, overwriting a previous model if it exists. Also creates and caches model forecasts, anomalies, and correlations."
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Parameters for the new model"
+        required: true
+        schema:
+          $ref: "#/definitions/modelparams"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/model"
+        400:
+          description: "Invalid or missing model parameters"
+  /models/{uuid}:
+    get:
+      tags:
+      - "models"
+      summary: "Get model information for a specific UUID"
+      description: ""
+      produces:
+      - "application/json"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        description: "UUID of the target time series"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/model"
+        404:
+          description: "Model not found"
+    delete:
+      tags:
+      - "models"
+      summary: "Delete model for a particular time series"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        description: "UUID of the target time series"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+  /models/{uuid}/forecast:
+    get:
+      tags:
+      - "models"
+      summary: "Get forecasts from a specific model"
+      description: "Returns future values predicted by the model for the last observed sensor values. The number of forecast depends on the number of output values specified when the model was created."
+      produces:
+      - "application/json"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        description: "UUID of the target time series"
+        required: true
+        type: "string"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/forecast"
+        404:
+          description: "Model not found"
+  /models/{uuid}/anomalies:
+    get:
+      tags:
+      - "models"
+      summary: "Get anomalies from a specific model"
+      description: "Returns anomalies detected by the given model. Anomalies are those points in the target time series for which the prediction error is highest. Any error value larger than 3 standard deviations is considered an anomaly, and anomalies are returned in sorted order by prediction error."
+      produces:
+      - "application/json"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        description: "UUID of the target time series"
+        required: true
+        type: "string"
+      - name: "count"
+        in: "query"
+        description: "Maximum number of anomalies to return"
+        required: false
+        type: "integer"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/anomalies"
+        404:
+          description: "Model not found"
+        400:
+          description: "Failed to parse parameters"
+  /models/{uuid}/correlations:
+    get:
+      tags:
+      - "models"
+      summary: "Get correlations from a specific model"
+      description: "Get features which have the highest correlation with the target time series, determined by measuring the increase in prediction error when the feature is removed."
+      produces:
+      - "application/json"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        description: "UUID of the target time series"
+        required: true
+        type: "string"
+      - name: "count"
+        in: "query"
+        description: "Maximum number of correlations to return"
+        required: false
+        default: 20
+        type: "integer"
+      - name: "only_timeseries"
+        in: "query"
+        description: "Whether to include derived features or only time series in the correlations"
+        required: false
+        default: false
+        type: "boolean"
+      responses:
+        200:
+          description: "Success"
+          schema:
+            $ref: "#/definitions/correlations"
+        404:
+          description: "Model not found"
+        400:
+          description: "Failed to parse parameters"
+definitions:
+  reducedmodel:
+    type: "object"
+    properties:
+      target_uuid:
+        type: "string"
+      date_created:
+        type: "integer"
+        format: "int64"
+  model:
+    type: "object"
+    properties:
+      target_uuid:
+        type: "string"
+      date_created:
+        type: "integer"
+        format: "int64"
+      num_hidden_units:
+        type: "integer"
+        format: "int32"
+      num_autoregressive_terms:
+        type: "integer"
+        format: "int32"
+      delay_length:
+        type: "integer"
+        format: "int32"
+        description: "Delay between autoregressive and target values"
+      num_output_values:
+        type: "integer"
+        format: "int32"
+        description: "Number of predictions to make"
+      num_features:
+        type: "integer"
+        format: "int32"
+      num_examples:
+        type: "integer"
+        format: "int32"
+      features:
+        type: "array"
+        items:
+          type: "string"
+        description: "UUIDs of time series used in the prediction model"
+  modelparams:
+    type: "object"
+    properties:
+      target_uuid:
+        type: "string"
+      num_hidden_units:
+        type: "integer"
+        format: "int32"
+      num_autoregressive_terms:
+        type: "integer"
+        format: "int32"
+      delay_length:
+        type: "integer"
+        format: "int32"
+        description: "Delay between autoregressive and target values"
+      num_output_values:
+        type: "integer"
+        format: "int32"
+        description: "Number of predictions to make"
+  forecast:
+    type: "object"
+    properties:
+      forecast:
+        type: "array"
+        items:
+          type: "number"
+  anomalies:
+    type: "object"
+    properties:
+      time:
+        type: "array"
+        items:
+          type: "integer"
+          format: "int64"
+      error:
+        type: "array"
+        items:
+          type: "number"
+  correlations:
+    type: "object"
+    properties:
+      columns:
+        type: "array"
+        items:
+          type: "string"
