@@ -85,7 +85,7 @@ paths:
       tags:
       - "models"
       summary: "Get forecasts from a specific model"
-      description: "Returns future values predicted by the model for the last observed sensor values. The number of forecast depends on the number of output values specified when the model was created."
+      description: "Returns future values predicted by the model for the last observed sensor values. The number of forecast depends on the number of output values specified when the model was created. Return type is a list of anomalies, where each anomaly is a list containing two items: the time and the forecasted sensor value."
       produces:
       - "application/json"
       parameters:
@@ -231,7 +231,9 @@ definitions:
       forecast:
         type: "array"
         items:
-          type: "number"
+          type: "array"
+          items:
+            type: "number"
   anomalies:
     type: "object"
     properties:

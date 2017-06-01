@@ -467,7 +467,7 @@ font-style: italic;
     <a class="up" href="#__Methods">Up</a>
     <pre class="get"><code class="huge"><span class="http-method">get</span> /models/{uuid}/forecast</code></pre></div>
     <div class="method-summary">Get forecasts from a specific model (<span class="nickname">modelsUuidForecastGet</span>)</div>
-    <div class="method-notes">Returns future values predicted by the model for the last observed sensor values. The number of forecast depends on the number of output values specified when the model was created.</div>
+    <div class="method-notes">Returns future values predicted by the model for the last observed sensor values. The number of forecast depends on the number of output values specified when the model was created. Return type is a list of anomalies, where each anomaly is a list containing two items: the time and the forecasted sensor value.</div>
 
     <h3 class="field-label">Path parameters</h3>
     <div class="field-items">
@@ -492,7 +492,7 @@ font-style: italic;
     <h3 class="field-label">Example data</h3>
     <div class="example-data-content-type">Content-Type: application/json</div>
     <pre class="example"><code>{
-  "forecast" : [ 1.3579000000000001069366817318950779736042022705078125 ]
+  "forecast" : [ [ 1.3579000000000001069366817318950779736042022705078125 ] ]
 }</code></pre>
 
     <h3 class="field-label">Produces</h3>
@@ -599,7 +599,7 @@ font-style: italic;
   <div class="model">
     <h3 class="field-label"><a name="forecast">forecast</a> <a class="up" href="#__Models">Up</a></h3>
     <div class="field-items">
-      <div class="param">forecast (optional)</div><div class="param-desc"><span class="param-type"><a href="#number">array[BigDecimal]</a></span>  </div>
+      <div class="param">forecast (optional)</div><div class="param-desc"><span class="param-type"><a href="#array">array[array[BigDecimal]]</a></span>  </div>
     </div>  <!-- field-items -->
   </div>
   <div class="model">
