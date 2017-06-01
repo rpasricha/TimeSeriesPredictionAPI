@@ -30,6 +30,8 @@ def read_timeseries_dfs(target_uuid, data_dir='data/'):
         if df[uuid].std() < 1e-10:
             continue
 
+        df.index = df.index.tz_localize('UTC')
+
         if uuid == target_uuid:
             target_df = df
         else:
@@ -86,7 +88,6 @@ def train_model(target_uuid, num_hidden_units, num_autoregressive_terms,
 
     # Add autoregressive and time features
     all_data = pd.concat([target_df] + processed_dfs, axis=1)
-    feature_names = list(all_data.columns)
     for i in range(1, num_autoregressive_terms + 1):
         all_data['prev_value_' + str(i)] = all_data[target_uuid].shift(i + delay_length)
     all_data = all_data.iloc[(num_autoregressive_terms + delay_length):]
@@ -104,6 +105,7 @@ def train_model(target_uuid, num_hidden_units, num_autoregressive_terms,
         all_data = all_data.iloc[:-num_output_values+1]
 
     # Create training and test data
+    feature_names = list(all_data.columns)
     shuffled_data = all_data.sample(frac=1, random_state=1)
     df_train = shuffled_data.iloc[:int(0.8*len(shuffled_data))]
     df_test  = shuffled_data.iloc[int(0.8*len(shuffled_data)):]
@@ -161,6 +163,14 @@ def get_forecast(model_info):
     predictions = model.predict(test_point)
     predictions = list(predictions.flatten())
     predictions = list(map(float, predictions))
+
+    # Calculate times for predicted values
+    target_df['time'] = target_df.index
+    target_df['delta'] = (target_df['time'] - target_df['time'].shift()).fillna(0)
+    time_delta = target_df['delta'].median()
+    for i in range(len(predictions)):
+        time = target_df.index[-1] + (i+1)*time_delta
+        predictions[i] = [int(time.timestamp()), predictions[i]]
 
     return predictions
 

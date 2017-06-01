@@ -2,6 +2,7 @@
 
 # Imports
 from flask import Flask, jsonify, request
+from flask_cors import CORS
 import datetime
 import uuid
 import json
@@ -10,6 +11,7 @@ import os
 import models
 
 app = Flask(__name__)
+CORS(app)
 
 def check_files(target_uuid):
     metadata_exists = os.path.isfile('metadata/' + target_uuid)
@@ -153,7 +155,19 @@ def delete_model(target_uuid):
 @app.route('/v1/models/<target_uuid>/forecast', methods=['GET'])
 def get_model_forecast(target_uuid):
     if not os.path.isfile('forecasts/' + target_uuid):
-        return jsonify({'Error': 'Forecasts not found'}), 404
+        if not check_files(target_uuid):
+            return jsonify({'Error': 'Metadata or model file not found'}), 404
+
+        f = open('metadata/' + target_uuid, 'r')
+        model_info = json.load(f)
+        f.close()
+
+        forecast = models.get_forecast(model_info)
+        f = open('forecasts/' + target_uuid, 'w')
+        json.dump({'forecast': forecast}, f)
+        f.close()
+
+        return jsonify({'forecast': forecast}), 200
 
     f = open('forecasts/' + target_uuid, 'r')
     forecasts = json.load(f)
